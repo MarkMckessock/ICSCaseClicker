@@ -30,6 +30,10 @@ record
     skinPriceWW : real
     skinPriceBS : real
 end record
+var inventoryY : int := maxy
+var sell : int := Pic.FileNew("images/sellButton.jpg")
+var openButton : int := Pic.FileNew("images/openCaseButton.jpg")
+var openCaseButton : int := Sprite.New(openButton)
 var inventoryBtn : int := Pic.FileNew("invButton.jpg")
 var invButton : int := Sprite.New(inventoryBtn)
 var click : int
@@ -37,7 +41,6 @@ var firstRun : boolean := true
 var money : real := 50.00
 var walletJPG : int := Pic.FileNew("wallet.gif")
 var wallet : int := Sprite.New(walletJPG)
-Sprite.SetPosition(wallet,270,maxy-90,true)
 var buttons : array 1 .. 50 of int
 var blankBG : int := Pic.FileNew("Blank BG.jpg")
 var buyButton : int := Pic.FileNew("buyButton.jpg")
@@ -261,6 +264,7 @@ procedure hideSprites
     for i : 1 .. upper(drawSkins)
         Sprite.Hide(drawSkins(i,1))
     end for
+    Sprite.Hide(openCaseButton)
 end hideSprites
 
 procedure sellItem(index : int)
@@ -291,20 +295,27 @@ procedure invScreen
     cls
     hideSprites
     Pic.Draw(blankBG,0,0,0)
-    loop
+    loop 
+        Sprite.SetPosition(wallet,maxx-140,maxy-70,true)
+        Font.Draw("$" + realstr(money,4),maxx-110,maxy - 75,font1,white)
         if upper(inventory) > 0 then
             for i : 1 .. upper(inventory)
+                if upper(inventory) > 6 then
+                inventoryY := inventoryY - 200
+                end if
                 if i <= upper(inventory) then
-                    Sprite.SetPosition(inventory(i).sprite,i*150-80,600,true)
+                    Sprite.SetPosition(inventory(i).sprite,i*150-80,inventoryY-40,true)
                     Sprite.Show(inventory(i).sprite)
-                    Font.Draw(inventory(i).weaponName + " - " + inventory(i).skinName,i*150-140,540,font1,white)
+                    Font.Draw(inventory(i).weaponName + " - " + inventory(i).skinName,i*150-140,inventoryY-110,font1,white)
+                    Draw.Line(i*150,inventoryY-151,i*150,maxy,black)
+                    Draw.Line(0,inventoryY-151,i*150,inventoryY-151,black)
                     %Font.Draw(inventory(i).price,i*150,450,font1,White)
                     %Font.Draw(inventory(i).weaponQuality,i*150,450,font1,White)
                     %if inventory(i).statTrak then
                     %Sprite.SetPosition(inventory(i).statTrakSprite,%X-Pos%,%Y-Pos%)
                     %Sprite.Show(inventory(i).statTrakSprite)
                     %end if
-                    Draw.Box(i*150-150,450,i*150,500,black)
+                    Pic.Draw(sell,i*150-150,inventoryY-150,0)
                     if xloc > i*150-150 and xloc < i*150 and y > 450 and y < 500 and button = 1 then
                         cls
                         hideSprites
@@ -314,14 +325,15 @@ procedure invScreen
                 end if
             end for
         end if
-        Sprite.SetPosition(buySprite,270,385,true)
-        Sprite.Show(buySprite)
+        Sprite.SetPosition(openCaseButton,maxx-100,maxy-23,true)
+        Sprite.Show(openCaseButton)
         mousewhere(xloc,y,button)
-        exit when xloc > 158 and xloc < 380 and y > 362 and y < 410 and button = 1
+        exit when xloc > 945 and xloc < 1149 and y > 593 and y < 635 and button = 1
     end loop
 end invScreen
 
 procedure openCase(crate : array 1 .. * of skin)
+
 %%%%% fills the drawSkins array with a set of random skins %%%%%
     for i : 1 .. upper(drawSkins)
         drawSkins(i,2) := randSkin(false,crate)
@@ -329,7 +341,7 @@ procedure openCase(crate : array 1 .. * of skin)
     end for
 %%%%% Main Program Loop %%%%%
     loop
-        money := money - 3.25
+        cls
         Sprite.Show(wallet)
         for i : 1 .. upper(inventory)
             Sprite.Hide(inventory(i).sprite)
@@ -343,8 +355,31 @@ procedure openCase(crate : array 1 .. * of skin)
         for i : 1 .. upper(step)
             step(i) := 150 * i -150
         end for
-        rolledSkin := randSkin(true,crate)    
-        
+        rolledSkin := randSkin(true,crate)
+        Sprite.SetHeight(chromaIskins,0)
+        Sprite.SetPosition(chromaIskins,maxx div 2,220,true)
+        Sprite.Show(chromaIskins)
+        Sprite.SetPosition(buySprite,270,385,true)
+        Sprite.Show(buySprite)
+        Sprite.SetPosition(invButton,885,385,true)
+        Sprite.Show(invButton)    
+        loop
+            Sprite.SetPosition(wallet,270,maxy-90,true)
+            mousewhere(xloc,y,button)
+            if xloc > 781 and xloc < 990 and y > 362 and y < 410 and button = 1 then
+                Sprite.Hide(invButton)
+                invScreen
+                hideSprites                
+                Pic.Draw(background,0,0,0)
+                Sprite.Show(buySprite)
+                Sprite.Show(invButton)
+                Sprite.Show(chromaIskins)
+                Font.Draw("$" + realstr(money,4),300,545,font1,white)
+                View.Update
+            elsif xloc > 158 and xloc < 380 and y > 362 and y < 410 and button = 1 then
+                exit
+            end if
+        end loop
         for i : 1 .. upper(drawSkins)
             drawSkins(i,2) := randSkin(false,crate)
             drawSkins(i,1) := Sprite.New(crate(drawSkins(i,2)).image)
@@ -353,12 +388,15 @@ procedure openCase(crate : array 1 .. * of skin)
         end for
             
         Sprite.Show(chromaI(rolledSkin).sprite)
-        Sprite.SetPosition(chromaIskins,maxx div 2,220,true)
+        
         Sprite.SetHeight(crate(rolledSkin).sprite,0)
         Sprite.SetHeight(rightSprite,0)
         Sprite.SetHeight(leftSprite,0)
-        Sprite.SetHeight(chromaIskins,0)
 %%%%% Animation Loop %%%%%
+        money := money - 3.25
+        cls
+        Pic.Draw(background,0,0,0)
+        Font.Draw("$" + realstr(money,4),300,545,font1,white)
         loop
             Sprite.Animate(crate(rolledSkin).sprite,crate(rolledSkin).image,step(1),470,true)
             for i : 2 .. 5
@@ -368,8 +406,9 @@ procedure openCase(crate : array 1 .. * of skin)
             Sprite.SetPosition(leftSprite,0,0,false)
             Sprite.Show(rightSprite)
             Sprite.Show(leftSprite)
-            Draw.ThickLine(maxx div 2,410,maxx div 2, maxy - 110,5,yellow)
+            Sprite.SetHeight(chromaIskins,0)
             Sprite.Show(chromaIskins)
+            Draw.ThickLine(maxx div 2,410,maxx div 2, maxy - 110,5,yellow)
             View.Update
             
             for i : 1 .. 5
@@ -402,20 +441,16 @@ procedure openCase(crate : array 1 .. * of skin)
         end if 
         View.Update
         loop
-            Sprite.SetPosition(buySprite,270,385,true)
-            Sprite.Show(buySprite)
-            Sprite.SetPosition(invButton,885,385,true)
-            Sprite.Show(invButton)
             mousewhere(xloc,y,button)
             View.Update
             if xloc > 781 and xloc < 990 and y > 362 and y < 410 and button = 1 then
                 Sprite.Hide(invButton)
                 invScreen
-                break
+                exit
             elsif xloc > 158 and xloc < 380 and y > 362 and y < 410 and button = 1 then
                 hideSprites   
                 openCase(chromaI)
-                break
+                exit
             end if 
         end loop
     end loop
