@@ -30,6 +30,7 @@ record
     skinPriceWW : real
     skinPriceBS : real
 end record
+var nextRow : boolean := false
 var inventoryY : int := maxy
 var sell : int := Pic.FileNew("images/sellButton.jpg")
 var openButton : int := Pic.FileNew("images/openCaseButton.jpg")
@@ -298,25 +299,53 @@ procedure invScreen
     loop 
         Sprite.SetPosition(wallet,maxx-140,maxy-70,true)
         Font.Draw("$" + realstr(money,4),maxx-110,maxy - 75,font1,white)
-        if upper(inventory) > 0 then
-            for i : 1 .. upper(inventory)
-                if upper(inventory) > 6 then
-                inventoryY := inventoryY - 200
-                end if
+        if upper(inventory) > 0 and upper(inventory) < 7 then
+            for i : 1 .. 6
                 if i <= upper(inventory) then
                     Sprite.SetPosition(inventory(i).sprite,i*150-80,inventoryY-40,true)
                     Sprite.Show(inventory(i).sprite)
-                    Font.Draw(inventory(i).weaponName + " - " + inventory(i).skinName,i*150-140,inventoryY-110,font1,white)
-                    Draw.Line(i*150,inventoryY-151,i*150,maxy,black)
+                    Font.Draw(inventory(i).weaponName + " - " + inventory(i).skinName,i*150-(150-i),inventoryY-110,font1,white)
+                    Draw.Line(i*150+i,inventoryY-151,i*150+i,maxy,black)
                     Draw.Line(0,inventoryY-151,i*150,inventoryY-151,black)
-                    %Font.Draw(inventory(i).price,i*150,450,font1,White)
-                    %Font.Draw(inventory(i).weaponQuality,i*150,450,font1,White)
-                    %if inventory(i).statTrak then
-                    %Sprite.SetPosition(inventory(i).statTrakSprite,%X-Pos%,%Y-Pos%)
-                    %Sprite.Show(inventory(i).statTrakSprite)
-                    %end if
-                    Pic.Draw(sell,i*150-150,inventoryY-150,0)
-                    if xloc > i*150-150 and xloc < i*150 and y > 450 and y < 500 and button = 1 then
+                    Pic.Draw(sell,i*150-(150-i),inventoryY-150,0)
+                    if xloc > i*150-150 and xloc < i*150 and y > inventoryY-153 and y < inventoryY-119 and button = 1 then
+                        cls
+                        hideSprites
+                        Pic.Draw(blankBG,0,0,0)
+                        sellItem(i)
+                    end if
+                end if
+                Sprite.Show(openCaseButton)
+                delay(10)
+            end for
+        elsif upper(inventory) > 6 then
+            for i : 1 .. 6
+                if i <= upper(inventory) then
+                    Sprite.SetPosition(inventory(i).sprite,i*150-80,inventoryY-40,true)
+                    Sprite.Show(inventory(i).sprite)
+                    Font.Draw(inventory(i).weaponName + " - " + inventory(i).skinName,i*150-(150-i),inventoryY-110,font1,white)
+                    Draw.Line(i*150+i,inventoryY-151,i*150+i,maxy,black)
+                    Draw.Line(0,inventoryY-151,i*150,inventoryY-151,black)
+                    Pic.Draw(sell,i*150-(150-i),inventoryY-150,0)
+                    if xloc > i*150-150 and xloc < i*150 and y > inventoryY-153 and y < inventoryY-119 and button = 1 then
+                        cls
+                        hideSprites
+                        Pic.Draw(blankBG,0,0,0)
+                        sellItem(i)
+                    end if
+                end if
+                Sprite.Show(openCaseButton)
+                delay(10)
+            end for
+            for i : 7 .. upper(inventory)
+                if i <= upper(inventory) then
+                    Sprite.SetPosition(inventory(i).sprite,i*150-970,440,true)
+                    Sprite.Show(inventory(i).sprite)
+                    Font.Draw(inventory(i).weaponName + " - " + inventory(i).skinName,i*150-(1050-i),489-110,font1,white)
+                    Draw.Line(i*150-900+(i-6),489-151,i*150-900+(i-6),maxy,black)
+                    Draw.Line(0,489-151,i*150-900,489-151,black)
+                    Pic.Draw(sell,i*150-(1050-(i-6)),489-150,0)
+                    if xloc > i*150-1050 and xloc < i*150-900 and y > 489-153 and y < 489-119 and button = 1 then
                         cls
                         hideSprites
                         Pic.Draw(blankBG,0,0,0)
