@@ -1,7 +1,3 @@
-import GUI
-% Add stattrak image
-% Fix Sprites
-
 % CS GO Case Opener - Created by Mark Mckessock for ICS3UG
 % Program Description:
 % The program goes through a directory containing the images to be used as skins.
@@ -10,9 +6,13 @@ import GUI
 % 6 skins are chosen according to accurate odds in the randSkin procedure, 1 of which is the winner
 % The winning skin is added to a flexible array for the inventory. 
 % The items can be sold from the inventory and the higher items are shifted down and the top element of the array is deleted.
+% Duplicate items are possible in the spin but are generated according to chance
+% The outcome of the spin is decided before it starts and the spin is just for show(just like the American election)
+import GUI
 
 View.Set("graphics:1150,640,offscreenonly")
-type skin :
+
+type skin : % Main 'skin' type
 record
     skinName : string
     weaponName : string
@@ -30,128 +30,109 @@ record
     skinPriceWW : real
     skinPriceBS : real
 end record
-var nextRow : boolean := false
-var inventoryY : int := maxy
+%%%%% Images %%%%%
 var sell : int := Pic.FileNew("images/sellButton.jpg")
 var openButton : int := Pic.FileNew("images/openCaseButton.jpg")
-var openCaseButton : int := Sprite.New(openButton)
 var inventoryBtn : int := Pic.FileNew("invButton.jpg")
-var invButton : int := Sprite.New(inventoryBtn)
-var click : int
-var firstRun : boolean := true
-var money : real := 50.00
 var walletJPG : int := Pic.FileNew("wallet.gif")
-var wallet : int := Sprite.New(walletJPG)
-var buttons : array 1 .. 50 of int
 var blankBG : int := Pic.FileNew("Blank BG.jpg")
 var buyButton : int := Pic.FileNew("buyButton.jpg")
-var buySprite : int := Sprite.New(buyButton)
-var winSprite,xloc,y,button : int 
-%var statTrakImage : int := Pic.FileNew("stattrakimage")
-var cardMil : int := Pic.FileNew("Mil-Spec Card.jpg")
-var cardMS : int := Sprite.New(cardMil)
-var cardCf : int := Pic.FileNew("Classified Card.jpg")
-var cardCl : int := Sprite.New(cardCf)
-var cardRt : int := Pic.FileNew("Restricted Card.jpg")
-var cardRs : int := Sprite.New(cardRt)
-var cardCrt : int := Pic.FileNew("Covert Card.jpg")
-var cardCv : int := Sprite.New(cardCrt)
-var cardEx : int := Pic.FileNew("Exceedingly Rare Card.jpg")
-var cardER : int := Sprite.New(cardEx)
-var chromaIskin : int := Pic.FileNew("chromaIskins.jpg")
-var chromaIskins : int := Sprite.New(chromaIskin)
-var exteriorRoll : int % Roll that checks for weapon quality
-var statRoll : int % Roll that checks for stat trak
-var inventory : flexible array 1 .. 0 of skin
 var background : int := Pic.FileNew("Case OpenerBG1.jpg")
 var rightClip : int := Pic.FileNew("Case OpenerBGRight.jpg")
 var leftClip : int := Pic.FileNew("Case OpenerBGLeft.jpg")
+var chromaIskin : int := Pic.FileNew("chromaIskins.jpg")
+var openCaseButton : int := Sprite.New(openButton)
+%%%%% Sprites %%%%%
+var invButton : int := Sprite.New(inventoryBtn)
+var wallet : int := Sprite.New(walletJPG)
+var buySprite : int := Sprite.New(buyButton)
+var chromaIskins : int := Sprite.New(chromaIskin)
 var leftSprite : int := Sprite.New(leftClip)
 var rightSprite : int := Sprite.New(rightClip)
-var drawSkins : array 1 .. 4, 1.. 2 of int
-var rolledSkin : int := 1
-var sortSkin : flexible array 1 .. 0 of int
-var streamNumber : int
-var chromaI : array 1 .. 14 of skin
-var filename : string
-var caseLength : int := -2
-var count : int := 0
-var namePart : int := 1
-var namePos : int := 0 %Holds the current character in the file name being accessed
-var step : array 1 .. upper(drawSkins)+1 of int
-var move : real := 1
-var x : real := 1
-var rollCycle : int := -150
-var baseRollSpeed : int := 25
-var rollSpeed : int := baseRollSpeed
-var roll : real
+%%%%% Fonts %%%%%
 var font1 : int := Font.New("sans serif:12")
-streamNumber := Dir.Open("skins/Chroma 1")
+%%%%% VARs %%%%%
+var money : real := 50.00
+var xloc,y,button,streamNumber : int 
+var exteriorRoll : int % Roll that checks for weapon quality
+var statRoll : int % Roll that checks for stat trak
+var inventory : flexible array 1 .. 0 of skin % Array that hold inv items
+var drawSkins : array 1 .. 4, 1.. 2 of int % Array that holds the random skins that roll with the winning skin and their original indexes in the chromaI array for reference
+var rolledSkin : int := 1 %Index of the winning item in the chromaI array
+var sortSkin : flexible array 1 .. 0 of int % Array that holds the skins of a given quality during the random process
+var chromaI : array 1 .. 14 of skin % Main array that holds all of the items of type skin
+var filename : string %Gets the filename from the items in the folder
+var count : int := 0 % stops the filenaming program from reading the '.' and '..' items in the folder
+var namePart : int := 1 % Holds the part of the name being analyzed eg. "Cartel","AK-47" and "Classified" would all have consecutive namePart values
+var namePos : int := 0 %Holds the current character in the file name being accessed
+var step : array 1 .. upper(drawSkins)+1 of int % Holds the position variables for the skins that are animated
+var rollCycle : int := -150 % Forces the program to roll the skins at a constant speed for a short time before slowing down
+var baseRollSpeed : int := 25 %Allows the default roll speed to be reset every roll
+var rollSpeed : int := baseRollSpeed
+var roll : real % The roll value from 0.00 to 1.00 for the main randSkin function
 
-for i : -1 .. 14
-    filename := Dir.Get(streamNumber)
-    if count > 1 then
-        chromaI(i).image := Pic.FileNew("skins/Chroma 1/"+filename)
-        chromaI(i).sprite := Sprite.New(chromaI(i).image)
-        for b : namePos + 1.. length(filename)
-            %if filename(b) = "," or ((length(filename) - namePos) < 6 and filename(b) = ".") then
-            if filename(b) = "," then
-                if namePart = 1 then
-                    chromaI(i).skinName := filename(namePos+1..(b)-1)
-                    namePos := b
-                    namePart += 1
-                    break
-                elsif namePart = 2 then
-                    chromaI(i).weaponName := filename(namePos+1..(b)-1)
-                    namePos := b
-                    namePart += 1
-                    break
-                elsif namePart = 3 then
-                    chromaI(i).skinClass := filename(namePos+1..(b)-1)
-                    namePos := b
-                    namePart += 1
-                    break
-                elsif namePart = 4 then
-                    chromaI(i).skinPriceFN := strreal(filename(namePos+1..(b)-1))
-                    namePos := b
-                    namePart += 1
-                    break
-                elsif namePart = 5 then
-                    chromaI(i).skinPriceMW := strreal(filename(namePos+1..(b)-1))
-                    namePos := b
-                    namePart += 1
-                    break
-                elsif namePart = 6 then
-                    chromaI(i).skinPriceFT := strreal(filename(namePos+1..(b)-1))
-                    namePos := b
-                    namePart += 1
-                    break
-                elsif namePart = 7 then
-                    chromaI(i).skinPriceWW := strreal(filename(namePos+1..(b)-1))
-                    namePos := b
-                    namePart +=1
-                    break
-                elsif namePart = 8 then
-                    chromaI(i).skinPriceBS := strreal(filename(namePos+1..(b)-1))
-                    namePos := b
-                    namePart +=1
-                    break
+procedure readFiles
+    streamNumber := Dir.Open("skins/Chroma 1")
+    for i : -1 .. 14
+        filename := Dir.Get(streamNumber)
+        if count > 1 then
+            chromaI(i).image := Pic.FileNew("skins/Chroma 1/"+filename)
+            chromaI(i).sprite := Sprite.New(chromaI(i).image)
+            for b : namePos + 1.. length(filename)
+                if filename(b) = "," then
+                    if namePart = 1 then
+                        chromaI(i).skinName := filename(namePos+1..(b)-1)
+                        namePos := b
+                        namePart += 1
+                        break
+                    elsif namePart = 2 then
+                        chromaI(i).weaponName := filename(namePos+1..(b)-1)
+                        namePos := b
+                        namePart += 1
+                        break
+                    elsif namePart = 3 then
+                        chromaI(i).skinClass := filename(namePos+1..(b)-1)
+                        namePos := b
+                        namePart += 1
+                        break
+                    elsif namePart = 4 then
+                        chromaI(i).skinPriceFN := strreal(filename(namePos+1..(b)-1))
+                        namePos := b
+                        namePart += 1
+                        break
+                    elsif namePart = 5 then
+                        chromaI(i).skinPriceMW := strreal(filename(namePos+1..(b)-1))
+                        namePos := b
+                        namePart += 1
+                        break
+                    elsif namePart = 6 then
+                        chromaI(i).skinPriceFT := strreal(filename(namePos+1..(b)-1))
+                        namePos := b
+                        namePart += 1
+                        break
+                    elsif namePart = 7 then
+                        chromaI(i).skinPriceWW := strreal(filename(namePos+1..(b)-1))
+                        namePos := b
+                        namePart +=1
+                        break
+                    elsif namePart = 8 then
+                        chromaI(i).skinPriceBS := strreal(filename(namePos+1..(b)-1))
+                        namePos := b
+                        namePart +=1
+                        break
+                    end if
                 end if
-            end if
-        end for
-            namePart := 1
-        namePos := 0
-    end if 
-    count += 1
-end for
+            end for
+                namePart := 1
+            namePos := 0
+        end if 
+        count += 1
+    end for
+end readFiles
 
-for i : 1 .. upper(chromaI)
-    put chromaI(i).skinName
-    View.Update
-end for
-delay(1000)
+readFiles
 
-function randSkin (winning : boolean,crate : array 1 .. * of skin): int
+function randSkin (crate : array 1 .. * of skin): int % takes an array of skins and returns an index for an item in that array generated according to the percentages from CS GO
     var temp : int
     new sortSkin, 0
     roll := Rand.Real
@@ -199,14 +180,14 @@ function randSkin (winning : boolean,crate : array 1 .. * of skin): int
     result sortSkin(temp)
 end randSkin
 
-procedure addInvItem
+procedure addInvItem %Duplicates the winning item to the inventory array
     new inventory, upper(inventory)+1
     inventory(upper(inventory)).skinName := chromaI(rolledSkin).skinName
     inventory(upper(inventory)).weaponName := chromaI(rolledSkin).weaponName
     inventory(upper(inventory)).skinClass := chromaI(rolledSkin).skinClass
     inventory(upper(inventory)).sprite := chromaI(rolledSkin).sprite
-    randint(statRoll,0,100)    
-    randint(exteriorRoll,1,5)    
+    randint(statRoll,0,100) %Roll to see if the item is StatTrak (%7 chance)    
+    randint(exteriorRoll,1,5) % Rolle to see the quality of the skin(equal % chance for each)    
     if statRoll < 7 then
         inventory(upper(inventory)).statTrak := true
     else
@@ -215,7 +196,7 @@ procedure addInvItem
     if exteriorRoll = 1 then
         inventory(upper(inventory)).weaponQuality := "Factory New"
         if inventory(upper(inventory)).statTrak then
-            inventory(upper(inventory)).price := chromaI(rolledSkin).skinPriceFN * 2
+            inventory(upper(inventory)).price := chromaI(rolledSkin).skinPriceFN * 2 % StatTrak means double price
         else
             inventory(upper(inventory)).price := chromaI(rolledSkin).skinPriceFN
         end if
@@ -251,24 +232,22 @@ procedure addInvItem
     inventory(upper(inventory)).sprite := Sprite.New(chromaI(rolledSkin).image)
 end addInvItem
 
-procedure hideSprites
+procedure hideSprites % Hides all the main sprites when changing screens
     Sprite.Hide(leftSprite)
     Sprite.Hide(rightSprite)
     Sprite.Hide(buySprite)
-    Sprite.Hide(cardMS)
-    Sprite.Hide(cardCl)
-    Sprite.Hide(cardCv)
-    Sprite.Hide(cardER)
-    Sprite.Hide(cardRs)
     Sprite.Hide(chromaIskins)
     Sprite.Hide(chromaI(rolledSkin).sprite)
     for i : 1 .. upper(drawSkins)
         Sprite.Hide(drawSkins(i,1))
     end for
-    Sprite.Hide(openCaseButton)
+        for i : 1 .. upper(inventory)
+        Sprite.Hide(inventory(i).sprite)
+    end for
+        Sprite.Hide(openCaseButton)
 end hideSprites
 
-procedure sellItem(index : int)
+procedure sellItem(index : int) %Removes the item indicated by the index argument from the inventory array and adds its value to the wallet
     delay(100)
     if upper(inventory) > 0 then
         if index not= upper(inventory) then
@@ -299,16 +278,16 @@ procedure invScreen
     loop 
         Sprite.SetPosition(wallet,maxx-140,maxy-70,true)
         Font.Draw("$" + realstr(money,4),maxx-110,maxy - 75,font1,white)
-        if upper(inventory) > 0 and upper(inventory) < 7 then
+        if upper(inventory) > 0 and upper(inventory) < 7 then %If there are only six or less items it only needs one row
             for i : 1 .. 6
                 if i <= upper(inventory) then
-                    Sprite.SetPosition(inventory(i).sprite,i*150-80,inventoryY-40,true)
+                    Sprite.SetPosition(inventory(i).sprite,i*150-80,maxy-40,true)
                     Sprite.Show(inventory(i).sprite)
-                    Font.Draw(inventory(i).weaponName + " - " + inventory(i).skinName,i*150-(150-i),inventoryY-110,font1,white)
-                    Draw.Line(i*150+i,inventoryY-151,i*150+i,maxy,black)
-                    Draw.Line(0,inventoryY-151,i*150,inventoryY-151,black)
-                    Pic.Draw(sell,i*150-(150-i),inventoryY-150,0)
-                    if xloc > i*150-150 and xloc < i*150 and y > inventoryY-153 and y < inventoryY-119 and button = 1 then
+                    Font.Draw(inventory(i).weaponName + " - " + inventory(i).skinName,i*150-(150-i),maxy-110,font1,white)
+                    Draw.Line(i*150+i,maxy-151,i*150+i,maxy,black)
+                    Draw.Line(0,maxy-151,i*150,maxy-151,black)
+                    Pic.Draw(sell,i*150-(150-i),maxy-150,0)
+                    if xloc > i*150-150 and xloc < i*150 and y > maxy-153 and y < maxy-119 and button = 1 then
                         cls
                         hideSprites
                         Pic.Draw(blankBG,0,0,0)
@@ -318,16 +297,16 @@ procedure invScreen
                 Sprite.Show(openCaseButton)
                 delay(10)
             end for
-        elsif upper(inventory) > 6 then
+            elsif upper(inventory) > 6 then % If two rows are needed...
             for i : 1 .. 6
                 if i <= upper(inventory) then
-                    Sprite.SetPosition(inventory(i).sprite,i*150-80,inventoryY-40,true)
+                    Sprite.SetPosition(inventory(i).sprite,i*150-80,maxy-40,true)
                     Sprite.Show(inventory(i).sprite)
-                    Font.Draw(inventory(i).weaponName + " - " + inventory(i).skinName,i*150-(150-i),inventoryY-110,font1,white)
-                    Draw.Line(i*150+i,inventoryY-151,i*150+i,maxy,black)
-                    Draw.Line(0,inventoryY-151,i*150,inventoryY-151,black)
-                    Pic.Draw(sell,i*150-(150-i),inventoryY-150,0)
-                    if xloc > i*150-150 and xloc < i*150 and y > inventoryY-153 and y < inventoryY-119 and button = 1 then
+                    Font.Draw(inventory(i).weaponName + " - " + inventory(i).skinName,i*150-(150-i),maxy-110,font1,white)
+                    Draw.Line(i*150+i,maxy-151,i*150+i,maxy,black)
+                    Draw.Line(0,maxy-151,i*150,maxy-151,black)
+                    Pic.Draw(sell,i*150-(150-i),maxy-150,0)
+                    if xloc > i*150-150 and xloc < i*150 and y > maxy-153 and y < maxy-119 and button = 1 then
                         cls
                         hideSprites
                         Pic.Draw(blankBG,0,0,0)
@@ -337,7 +316,7 @@ procedure invScreen
                 Sprite.Show(openCaseButton)
                 delay(10)
             end for
-            for i : 7 .. upper(inventory)
+                for i : 7 .. upper(inventory)
                 if i <= upper(inventory) then
                     Sprite.SetPosition(inventory(i).sprite,i*150-970,440,true)
                     Sprite.Show(inventory(i).sprite)
@@ -362,36 +341,52 @@ procedure invScreen
 end invScreen
 
 procedure openCase(crate : array 1 .. * of skin)
-
-%%%%% fills the drawSkins array with a set of random skins %%%%%
+    
+    %%%%% fills the drawSkins array with a set of random skins %%%%%
     for i : 1 .. upper(drawSkins)
-        drawSkins(i,2) := randSkin(false,crate)
+        drawSkins(i,2) := randSkin(crate)
         drawSkins(i,1) := Sprite.New(chromaI(drawSkins(i,2)).image)
     end for
-%%%%% Main Program Loop %%%%%
+    %%%%% Main Program Loop %%%%%
     loop
         cls
         Sprite.Show(wallet)
         for i : 1 .. upper(inventory)
             Sprite.Hide(inventory(i).sprite)
         end for
-            %%%%%% Hide Skins %%%%%%%%%%%    
+        %%%%%% Layout/Images %%%%%%%%%%%    
         Pic.Draw(background,0,0,0)
         Font.Draw("$" + realstr(money,4),300,545,font1,white)
         hideSprites
+        
+        %Reset rollcycle and speed
         rollCycle := 0
         rollSpeed := baseRollSpeed
+        %Reset all sprite positions
         for i : 1 .. upper(step)
             step(i) := 150 * i -150
         end for
-        rolledSkin := randSkin(true,crate)
+        %Draw all sprites to screen
+        rolledSkin := randSkin(crate)
         Sprite.SetHeight(chromaIskins,0)
         Sprite.SetPosition(chromaIskins,maxx div 2,220,true)
         Sprite.Show(chromaIskins)
         Sprite.SetPosition(buySprite,270,385,true)
         Sprite.Show(buySprite)
         Sprite.SetPosition(invButton,885,385,true)
-        Sprite.Show(invButton)    
+        Sprite.Show(invButton)
+        for i : 1 .. upper(drawSkins)
+            drawSkins(i,2) := randSkin(crate)
+            drawSkins(i,1) := Sprite.New(crate(drawSkins(i,2)).image)
+            Sprite.Show(drawSkins(i,1))
+            Sprite.SetHeight(drawSkins(i,1),0)
+        end for
+            
+        Sprite.Show(chromaI(rolledSkin).sprite)
+        Sprite.SetHeight(crate(rolledSkin).sprite,0)
+        Sprite.SetHeight(rightSprite,0)
+        Sprite.SetHeight(leftSprite,0)  
+        %%%%% Wait for user i
         loop
             Sprite.SetPosition(wallet,270,maxy-90,true)
             mousewhere(xloc,y,button)
@@ -409,19 +404,7 @@ procedure openCase(crate : array 1 .. * of skin)
                 exit
             end if
         end loop
-        for i : 1 .. upper(drawSkins)
-            drawSkins(i,2) := randSkin(false,crate)
-            drawSkins(i,1) := Sprite.New(crate(drawSkins(i,2)).image)
-            Sprite.Show(drawSkins(i,1))
-            Sprite.SetHeight(drawSkins(i,1),0)
-        end for
-            
-        Sprite.Show(chromaI(rolledSkin).sprite)
-        
-        Sprite.SetHeight(crate(rolledSkin).sprite,0)
-        Sprite.SetHeight(rightSprite,0)
-        Sprite.SetHeight(leftSprite,0)
-%%%%% Animation Loop %%%%%
+        %%%%% Animation Loop %%%%%
         money := money - 3.25
         cls
         Pic.Draw(background,0,0,0)
@@ -439,36 +422,36 @@ procedure openCase(crate : array 1 .. * of skin)
             Sprite.Show(chromaIskins)
             Draw.ThickLine(maxx div 2,410,maxx div 2, maxy - 110,5,yellow)
             View.Update
-            
-            for i : 1 .. 5
+            %Loops items
+            for i : 1 .. 5 
                 if step(i) > 935 then
                     step(i) := step (i)-718
                 end if
             end for
-                
+            %Changes items position variables    
             for i : 1 .. upper(step)
                 step(i) := step(i) + rollSpeed
             end for
-                
             delay(3)
             rollCycle += 1
-            
+            %Slows the Roll
             if rollCycle >= 0 then
                 if rollCycle > 14 then
                     rollSpeed -= 1
                     rollCycle := 0
                 end if
             end if
-            
             exit when rollSpeed = 0
         end loop     
         addInvItem
+        %%%%% Print Items details %%%%%
         if inventory(upper(inventory)).statTrak then
             Font.Draw("Stattrak! " + inventory(upper(inventory)).weaponName + " - " + inventory(upper(inventory)).skinName + " (" + inventory(upper(inventory)).weaponQuality + ") $" + realstr(inventory(upper(inventory)).price,4),maxx div 2-180,370,font1,white)
         else
             Font.Draw(chromaI(rolledSkin).weaponName + " - " + chromaI(rolledSkin).skinName + " (" + inventory(upper(inventory)).weaponQuality + ") $" + realstr(inventory(upper(inventory)).price,4),maxx div 2-180,370,font1,white)
         end if 
         View.Update
+        %%%%% Wait for input again %%%%%
         loop
             mousewhere(xloc,y,button)
             View.Update
@@ -484,8 +467,4 @@ procedure openCase(crate : array 1 .. * of skin)
         end loop
     end loop
 end openCase
-
-if firstRun = true then
-    firstRun := false
-    openCase(chromaI)
-end if
+openCase(chromaI)
