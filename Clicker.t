@@ -33,14 +33,14 @@ end record
 %%%%% Images %%%%%
 var sell : int := Pic.FileNew("images/sellButton.jpg")
 var openButton : int := Pic.FileNew("images/openCaseButton.jpg")
-var inventoryBtn : int := Pic.FileNew("invButton.jpg")
-var walletJPG : int := Pic.FileNew("wallet.gif")
-var blankBG : int := Pic.FileNew("Blank BG.jpg")
-var buyButton : int := Pic.FileNew("buyButton.jpg")
-var background : int := Pic.FileNew("Case OpenerBG1.jpg")
-var rightClip : int := Pic.FileNew("Case OpenerBGRight.jpg")
-var leftClip : int := Pic.FileNew("Case OpenerBGLeft.jpg")
-var chromaIskin : int := Pic.FileNew("chromaIskins.jpg")
+var inventoryBtn : int := Pic.FileNew("images/invButton.jpg")
+var walletJPG : int := Pic.FileNew("images/wallet.gif")
+var blankBG : int := Pic.FileNew("images/Blank BG.jpg")
+var buyButton : int := Pic.FileNew("images/buyButton.jpg")
+var background : int := Pic.FileNew("images/Case OpenerBG1.jpg")
+var rightClip : int := Pic.FileNew("images/Case OpenerBGRight.jpg")
+var leftClip : int := Pic.FileNew("images/Case OpenerBGLeft.jpg")
+var chromaIskin : int := Pic.FileNew("images/chromaIskins.jpg")
 var openCaseButton : int := Sprite.New(openButton)
 %%%%% Sprites %%%%%
 var invButton : int := Sprite.New(inventoryBtn)
@@ -72,11 +72,11 @@ var rollSpeed : int := baseRollSpeed
 var roll : real % The roll value from 0.00 to 1.00 for the main randSkin function
 
 procedure readFiles
-    streamNumber := Dir.Open("skins/Chroma 1")
+    streamNumber := Dir.Open("images/skins/Chroma 1")
     for i : -1 .. 14
         filename := Dir.Get(streamNumber)
         if count > 1 then
-            chromaI(i).image := Pic.FileNew("skins/Chroma 1/"+filename)
+            chromaI(i).image := Pic.FileNew("images/skins/Chroma 1/"+filename)
             chromaI(i).sprite := Sprite.New(chromaI(i).image)
             for b : namePos + 1.. length(filename)
                 if filename(b) = "," then
