@@ -1,3 +1,4 @@
+% https://github.com/MarkMckessock/ICSCaseClicker
 % CS GO Case Opener - Created by Mark Mckessock for ICS3UG
 % Program Description:
 % The program goes through a directory containing the images to be used as skins.
@@ -289,7 +290,11 @@ procedure invScreen
                     Pic.Draw(sell,i*150-(150-i),maxy-150,0)
                     if xloc > i*150-150 and xloc < i*150 and y > maxy-153 and y < maxy-119 and button = 1 then
                         cls
-                        hideSprites
+                        Sprite.Show(openCaseButton)
+                        Font.Draw("$" + realstr(money,4),maxx-110,maxy - 75,font1,white)
+                        for b : 1 .. upper(inventory)
+                            Sprite.Hide(inventory(b).sprite)
+                        end for
                         Pic.Draw(blankBG,0,0,0)
                         sellItem(i)
                     end if
@@ -308,13 +313,17 @@ procedure invScreen
                     Pic.Draw(sell,i*150-(150-i),maxy-150,0)
                     if xloc > i*150-150 and xloc < i*150 and y > maxy-153 and y < maxy-119 and button = 1 then
                         cls
-                        hideSprites
-                        Pic.Draw(blankBG,0,0,0)
+                        Sprite.Show(openCaseButton)
                         sellItem(i)
+                        Font.Draw("$" + realstr(money,4),maxx-110,maxy - 75,font1,white)
+                        View.Update
+                        for b : 1 .. upper(inventory)
+                            Sprite.Hide(inventory(b).sprite)
+                        end for
+                        Pic.Draw(blankBG,0,0,0)
                     end if
                 end if
                 Sprite.Show(openCaseButton)
-                delay(10)
             end for
                 for i : 7 .. upper(inventory)
                 if i <= upper(inventory) then
@@ -326,7 +335,12 @@ procedure invScreen
                     Pic.Draw(sell,i*150-(1050-(i-6)),489-150,0)
                     if xloc > i*150-1050 and xloc < i*150-900 and y > 489-153 and y < 489-119 and button = 1 then
                         cls
-                        hideSprites
+                        Sprite.Show(openCaseButton)
+                        Font.Draw("$" + realstr(money,4),maxx-110,maxy - 75,font1,white)
+                        View.Update
+                        for b : 1 .. upper(inventory)
+                            Sprite.Hide(inventory(b).sprite)
+                        end for
                         Pic.Draw(blankBG,0,0,0)
                         sellItem(i)
                     end if
@@ -368,25 +382,37 @@ procedure openCase(crate : array 1 .. * of skin)
         end for
         %Draw all sprites to screen
         rolledSkin := randSkin(crate)
-        Sprite.SetHeight(chromaIskins,0)
+        
+        
         Sprite.SetPosition(chromaIskins,maxx div 2,220,true)
+        Sprite.SetHeight(chromaIskins,1)
         Sprite.Show(chromaIskins)
+        
         Sprite.SetPosition(buySprite,270,385,true)
         Sprite.Show(buySprite)
+        
         Sprite.SetPosition(invButton,885,385,true)
         Sprite.Show(invButton)
+        
         for i : 1 .. upper(drawSkins)
             drawSkins(i,2) := randSkin(crate)
             drawSkins(i,1) := Sprite.New(crate(drawSkins(i,2)).image)
-            Sprite.Show(drawSkins(i,1))
             Sprite.SetHeight(drawSkins(i,1),0)
+            Sprite.SetPosition(drawSkins(i,1),step(i+1),470,true)
         end for
-            
-        Sprite.Show(chromaI(rolledSkin).sprite)
+        
+        Sprite.SetPosition(crate(rolledSkin).sprite,step(1),470,true)   
         Sprite.SetHeight(crate(rolledSkin).sprite,0)
+        
+        
+        Sprite.SetPosition(rightSprite,870,0,false)
         Sprite.SetHeight(rightSprite,0)
-        Sprite.SetHeight(leftSprite,0)  
-        %%%%% Wait for user i
+        Sprite.Show(rightSprite)
+        
+        Sprite.SetPosition(leftSprite,0,0,false)
+        Sprite.SetHeight(leftSprite,0) 
+        Sprite.Show(leftSprite)
+        %%%%% Wait for user input %%%%
         loop
             Sprite.SetPosition(wallet,270,maxy-90,true)
             mousewhere(xloc,y,button)
@@ -410,16 +436,18 @@ procedure openCase(crate : array 1 .. * of skin)
         Pic.Draw(background,0,0,0)
         Font.Draw("$" + realstr(money,4),300,545,font1,white)
         loop
+            Sprite.Show(crate(rolledSkin).sprite)
+            for i : 1 .. upper(drawSkins)
+                Sprite.Show(drawSkins(i,1))
+            end for
             Sprite.Animate(crate(rolledSkin).sprite,crate(rolledSkin).image,step(1),470,true)
             for i : 2 .. 5
                 Sprite.Animate(drawSkins(i-1,1),crate(drawSkins(i-1,2)).image,step(i),470,true)
             end for
-                Sprite.SetPosition(rightSprite,870,0,false)
-            Sprite.SetPosition(leftSprite,0,0,false)
-            Sprite.Show(rightSprite)
-            Sprite.Show(leftSprite)
             Sprite.SetHeight(chromaIskins,0)
             Sprite.Show(chromaIskins)
+            Sprite.Show(leftSprite)
+            Sprite.Show(rightSprite)
             Draw.ThickLine(maxx div 2,410,maxx div 2, maxy - 110,5,yellow)
             View.Update
             %Loops items
